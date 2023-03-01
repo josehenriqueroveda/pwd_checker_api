@@ -18,16 +18,23 @@ def _logs_db():
     return LogRecorder(conn, "logs", "jobs", teams_hook)
 
 
-HIBP_URL = "https://api.pwnedpasswords.com/range/"
+def _api_url():
+    config = ConfigParser()
+    config.read(r"./config/config.ini")
+    url = config.get("hibp", "url")
+    return url
+
+
+HIBP_URL = _api_url()
 
 app = FastAPI()
 security = HTTPBasic()
 recorder = _logs_db()
 
 
-def request_data(query_char, recorder: LogRecorder):
+def request_data(query_char):
     try:
-        url = "https://api.pwnedpasswords.com/range/" + query_char
+        url = HIBP_URL + query_char
         res = requests.get(url)
         if res.status_code != 200:
             raise RuntimeError(
@@ -47,7 +54,7 @@ def get_password_leaks(hashes, hash_tail):
     return 0
 
 
-def check_api_passwords(password, recorder: LogRecorder):
+def check_api_passwords(password):
     try:
         sha1password = hashlib.sha1(password.encode("utf-8")).hexdigest().upper()
         five_chars, tail = sha1password[:5], sha1password[5:]
@@ -65,7 +72,7 @@ async def root():
 
 
 @app.post("/check")
-async def check_password(password: str, recorder: LogRecorder):
+async def check_password(password: str):
     try:
         count = check_api_passwords(password)
         if count:
