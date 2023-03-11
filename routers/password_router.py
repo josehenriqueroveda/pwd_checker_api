@@ -30,6 +30,10 @@ recorder = _logs_db()
 def password_strength(password):
     if len(password) < 8:
         return False
+    
+    common_words = ["qwert", "senha", "password"]
+    if any(word in password.lower() for word in common_words):
+        return False
 
     has_uppercase = any(char.isupper() for char in password)
     has_lowercase = any(char.islower() for char in password)
@@ -83,15 +87,15 @@ async def check_password(pm: PasswordModel):
         pwd = pm["password"]
         count = check_api_passwords(pwd)
         strength = password_strength(pwd)
-        if count == 0:
+        if int(count) == 0:
             leaked = False
-        elif count > 0:
+        elif int(count) > 0:
             leaked = True
 
         if strength:
-            return {"leaked": leaked, "count": count, "strength": True}
+            return {"leaked": leaked, "count": int(count), "strength": True}
         else:
-            return {"leaked": leaked, "count": 0, "strength": False}
+            return {"leaked": leaked, "count": int(count), "strength": False}
     except Exception as e:
         log = Log("PWD_Checker_API", "error", str(e), "check_password")
         recorder.record_log(log)
